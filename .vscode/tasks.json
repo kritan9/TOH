@@ -18,6 +18,7 @@
                 "-lsfml-graphics",
                 "-lsfml-window",
                 "-lsfml-system",
+                "-ltgui"
             ]
         }
     ]

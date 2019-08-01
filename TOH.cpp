@@ -1,58 +1,307 @@
 
 #include "TOH.hpp"
 #include "disc.hpp"
+#include "DiscInput.h"
 using namespace std;
-#define WIDTH 1366
-#define HEIGHT 768
-#define offset 100.0f
 
+int threadTerminate=0;
+float TOH::offset=150.0f;
+bool mouseIntersect(sf::Sprite& sp,sf::RenderWindow& window,sf::Vector2u size);
 struct pThread //parameters for the thread function to solve TOH
 {
- disc* d;float height;int *peg;int n;int src;int dest;int aux;
-pThread ( disc* di,float heigh,int *pe,int nu,int sr,int des,int au):
-d(di),height(heigh),peg(pe),n(nu),src(sr),dest(des),aux(au)
-{}
+int *finish;
+ disc* d;float& height;int *peg;int &n;int src;int dest;int aux;
+pThread ( disc *di,float &heigh,int *pe,int &nu,int sr,int des,int au,int *fin):
+d(di),height(heigh),peg(pe),n(nu),src(sr),dest(des),aux(au),finish(fin)
+{
+}
+};
+struct dThread//parameters for display thread
+{
+    int *finish;
+    disc *d;int &num;
+    dThread(disc *di,int &n,int *fin):d(di),num(n),finish(fin){}
 };
 void threadToh(pThread& x);//thread Function to solve TOH
+void initialDisplayThread(dThread&);
 void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg);//peg numbers are 1,2,3
 void solveTOH(disc* d,float height,int *peg,int n,int src,int dest,int aux);
 
+int TOH::steps=0;
+sf::Event TOH::event;
+sf::Font TOH::font;
+TOH::ProgramState TOH::state=TOH::ProgramState::Menu;
 
 int main()
 {
-
+    TOH::font.loadFromFile("ariali.ttf");
+    TOH toh;
+    DiscInput di;
+    int mouseFlag[5]={0,0,0,0,0};
+    int init=0;
+    int *finish =new int(0);
+    int *finish1=new int(0);
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Tower Of Hanoi");
-    int numOfDisk=3;
-    disc *disk=new disc[numOfDisk];
-    for(int i=numOfDisk-1;i>=0;i--)
-    {
-        disk[i].Create(sf::Vector2f(WIDTH*1.0f/4.0f,HEIGHT-offset-(numOfDisk-1-i)*20.0f),sf::Vector2f(40.0f+20*i,20.0f));
-    }
+    int numOfDisk=0;
+    disc disk[MAX];
+    float heightOfPole;
     int peg[3]={numOfDisk,0,0};
-    pThread _temp(disk,400.0f,peg,numOfDisk,1,3,2);
+    pThread _temp(disk,heightOfPole,peg,numOfDisk,1,3,2,finish1);
+    dThread _temp2(disk,numOfDisk,finish);
     sf::Thread thread(&threadToh,_temp);
-    thread.launch();
+    sf::Thread thread2(&initialDisplayThread,_temp2);
+    toh.adjustPole(200.0f,1.0f) ;
+    
     while (window.isOpen())
     {
-        sf::Event event;
-        while (window.pollEvent(event))
+        switch(TOH::state)
         {
-            if (event.type == sf::Event::Closed)
+            case TOH::Solve:
+            {   
+            if(init == 0)
+            {
+                toh.speedAdjust(disc::speed);
+                threadTerminate=0;
+                toh.but1.setTexture(toh._button);
+                toh.but2.setTexture(toh._button);
+                for(int i=numOfDisk-1;i>=0;i--)
+                {
+                    disk[i].Create(sf::Vector2f(WIDTH*1.0f/4.0f,HEIGHT-TOH::offset-(numOfDisk-1-i)*disc::scale*20.0f),sf::Vector2f(40.0f+20*i,20.0f),i+1);
+                }
+                peg[0]=numOfDisk;
+                peg[1]=peg[2]=0;
+               thread.launch();
+                init =1;
+            }
+                while(window.pollEvent(TOH::event))
+                {
+                    if (TOH::event.type == sf::Event::Closed)
+                    {
+                        TOH::state=TOH::ProgramState::Close;
+                    }
+                }
+
+                if(mouseIntersect(toh.right,window,toh._right.getSize()))
+                {
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) )
+                {
+                    if(disc::speed<numOfDisk*10.0f/3.0f )
+                    {disc::speed+=0.005f;
+                    toh.speedAdjust(disc::speed);}
+                }
+                }
+                if(mouseIntersect(toh.left,window,toh._left.getSize()))
+                {
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) )
+                {
+                    if(disc::speed>0.505f)
+                    {disc::speed-=0.005f;
+                    toh.speedAdjust(disc::speed);}
+                }
+                }
+                if(mouseIntersect(toh.but1,window,toh._button.getSize())){
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) || mouseFlag[2]==1)
+                {
+                    mouseFlag[2]=1;
+                 if(TOH::event.type==sf::Event::MouseButtonReleased)
+                {
+                    toh.but1.setTexture(toh._button);
+                    threadTerminate=1;
+                }
+                }}else{mouseFlag[2]=0;toh.but1.setTexture(toh._button);}
+                window.clear(sf::Color::Black);
+                window.draw(toh.bg);
+                window.draw(toh.speed);
+                window.draw(toh.s);
+                toh.drawPole(window);
+                for(int i=numOfDisk-1;i>=0;i--)
+                {
+                  disk[i].draw(window);
+                }
+                window.draw(toh.left);
+                window.draw(toh.right);
+                window.draw(toh.but1);
+                toh.drawString(2,window);
+                toh.stepsDraw(window);
+                window.display();
+                if(*finish1==1)
+                {  
+                     TOH::state=TOH::ProgramState::Finish;
+                     if(threadTerminate==1) {TOH::state=TOH::ProgramState::Menu;numOfDisk=0;}
+                    threadTerminate=0;
+                    init =0;
+                    *finish1=0;
+                }
+                break;
+            }
+            case TOH::Finish:
+            {
+                while(window.pollEvent(TOH::event))
+                {
+                    if (TOH::event.type == sf::Event::Closed)
+                    {
+                        TOH::state=TOH::ProgramState::Close;
+                    }
+                }
+                if(mouseIntersect(toh.but1,window,toh._button.getSize())){
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) || mouseFlag[2]==1)
+                {
+                    mouseFlag[2]=1;
+                 if(TOH::event.type==sf::Event::MouseButtonReleased)
+                {
+                    toh.but1.setTexture(toh._button);
+                    { TOH::state=TOH::ProgramState::Menu; numOfDisk=0;}
+                }
+                }}else{mouseFlag[2]=0;toh.but1.setTexture(toh._button);}
+                window.clear(sf::Color::Black);
+                window.draw(toh.bg);
+                toh.drawPole(window);
+                for(int i=numOfDisk-1;i>=0;i--)
+                {
+                  disk[i].draw(window);
+                }
+                window.draw(toh.but1);
+                toh.drawString(2,window);
+                toh.stepsDraw(window);
+                window.display();
+
+                break;
+            }
+
+            case TOH::ScaleInput:
+            { 
+            if(init == 0)
+            {
+                toh.but1.setTexture(toh._button);
+                toh.but2.setTexture(toh._button);
+                thread2.launch();
+                init =1;
+            }
+                window.clear(sf::Color::Black);
+                window.draw(toh.bg);
+                toh.drawPole(window);
+                for(int i=numOfDisk-1;i>=0;i--)
+                {
+                  disk[i].draw(window);
+                }
+                window.draw(toh.but1);
+                window.draw(toh.but2);
+                toh.drawString(1,window);
+                window.display();
+                if(*finish==1)
+                {
+                    TOH::state=TOH::ProgramState::Menu;
+                    init =0;
+                    *finish=0;
+                }
+                 break;
+            }
+            case TOH::DiscInp:
+            {
+                if(init == 0)
+            {
+                disc::scale=1.0f;
+                disc::speed=2.0f;
+                init =1;
+            }
+            if(di.Update(window)==1) 
+            {
+                if(di.setNumber(numOfDisk)==1)
+                {
+                    if(20.0f*numOfDisk+20.0f>WIDTH/4.5f)
+                    {
+                        disc::scale =(WIDTH/4.5f)/(20.0f*numOfDisk+20.0f);
+                    }
+                    di.Clear();
+                    heightOfPole=HEIGHT-TOH::offset-(numOfDisk-1)*disc::scale*20.0f-200.0f;
+                    toh.adjustPole(heightOfPole,disc::scale);
+                    TOH::state=TOH::ProgramState::ScaleInput;
+                    init=0;
+                }
+            }
+            window.clear(sf::Color::Black);
+            window.draw(toh.bg);
+            toh.drawPole(window);
+            for(int i=numOfDisk-1;i>=0;i--) disk[i].draw(window);
+            window.draw(toh.number);
+            di.Draw(window);
+            window.draw(toh.but1);window.draw(toh.but2);
+            toh.drawString(1,window);
+            window.display();
+            break;
+            }
+            case TOH::Menu:
+            {
+                 if(init == 0)
+            {
+                TOH::steps=0;
+                toh.but1.setTexture(toh._button);
+                toh.but2.setTexture(toh._button);
+                init =1;
+            }
+                while(window.pollEvent(TOH::event))
+                {
+                    if (TOH::event.type == sf::Event::Closed)
+                    {
+                        TOH::state=TOH::ProgramState::Close;
+                    }
+                }
+                if(mouseIntersect(toh.but1,window,toh._button.getSize()))
+                {
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) || mouseFlag[0]==1)
+                {
+                    toh.but1.setTexture(toh._button2);
+                    mouseFlag[0]=1;
+                 if(TOH::event.type==sf::Event::MouseButtonReleased)
+                {
+                    toh.but1.setTexture(toh._button);
+                    TOH::state = TOH::ProgramState::DiscInp;
+                }
+                }}else{mouseFlag[0]=0;toh.but1.setTexture(toh._button);}
+
+                if(mouseIntersect(toh.but2,window,toh._button.getSize())){
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) || mouseFlag[1]==1)
+                {
+                    toh.but2.setTexture(toh._button2);
+                    mouseFlag[1]=1;
+                 if(TOH::event.type==sf::Event::MouseButtonReleased)
+                {
+                    toh.but2.setTexture(toh._button);
+                    if(numOfDisk>0)
+                    TOH::state = TOH::ProgramState::Solve;
+                }
+                }
+                }else{mouseFlag[1]=0;toh.but2.setTexture(toh._button);}
+            if(TOH::state!=TOH::ProgramState::Menu){init=0;}
+            window.clear(sf::Color::Black);
+            window.draw(toh.bg);
+            toh.drawPole(window);
+            for(int i=numOfDisk-1;i>=0;i--) disk[i].draw(window); 
+            window.draw(toh.but1);window.draw(toh.but2);
+            toh.drawString(1,window);
+            window.display();
+            break;
+            }
+            case TOH::Close:
             {
                 thread.terminate();
+                thread2.terminate();
+                window.close();
+                break;
+            }
+        }
+        window.pollEvent(TOH::event);
+        {
+            if (TOH::event.type == sf::Event::Closed)
+            {
+                thread.terminate();
+                thread2.terminate();
                 window.close();
             }
         }
-        window.clear(sf::Color::Black);
-
-        for(int i=numOfDisk-1;i>=0;i--)
-        {
-            disk[i].draw(window);
-        }
-       window.display();
         
     }
-    delete[] disk;
+
     return 0;
 }
 
@@ -65,6 +314,7 @@ int main()
 
 void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg)//peg numbers are 1,2,3
 {
+    if(threadTerminate==1) return;
     float t=0.0f,dt;
     sf::Clock fullclock;
     float speedX,speedY;
@@ -74,7 +324,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
     int flag2=0;
     int flag3=0;
     float dist=abs(d[discNum].position.x-(WIDTH/4.0f)*destPeg);
-    while(flag)
+    while(flag )
     {
         if(transition==0) 
         {   
@@ -83,6 +333,8 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
             d[discNum].move(sf::Vector2f(0,-disc::speed*dt));
             if(d[discNum].position.y<height) 
             {
+                d[discNum].position.y=height;
+                d[discNum].setPos();
                 transition =1;
             }
            
@@ -108,6 +360,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
                  {
                      d[discNum].position.y=height;
                      d[discNum].position.x=(WIDTH/4.0f)*destPeg;
+                     d[discNum].setPos();
                      transition=2;
                      flag3=0;
                      flag2=0;
@@ -120,6 +373,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
                  {
                      d[discNum].position.y=height;
                      d[discNum].position.x=(WIDTH/4.0f)*destPeg;
+                     d[discNum].setPos();
                      transition=2;
                      flag2=0;
                  }
@@ -131,20 +385,23 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
             dt=fullclock.getElapsedTime().asMilliseconds()-t;
             t=fullclock.getElapsedTime().asMilliseconds();
             d[discNum].move(sf::Vector2f(0,disc::speed*dt));
-            if(d[discNum].position.y>HEIGHT-offset-peg[destPeg-1]*d[discNum].size.y) 
+            if(d[discNum].position.y>HEIGHT-TOH::offset-peg[destPeg-1]*d[discNum].size.y) 
             {
-                d[discNum].position.y=HEIGHT-offset-peg[destPeg-1]*d[discNum].size.y;
+                d[discNum].position.y=HEIGHT-TOH::offset-peg[destPeg-1]*d[discNum].size.y;
+                d[discNum].setPos();
                 peg[srcPeg-1]--;
                 peg[destPeg-1]++;
                 flag=0;
             }
         }
-        
+        if(threadTerminate==1) return;
     }
+    TOH::steps++;
 }
 
 void solveTOH( disc* d,float height,int *peg,int n,int src,int dest,int aux)
 {
+    if(threadTerminate==1) return;
     if(n==1) DiscUpdate(d,0,src,dest,height,peg);
     else
     {
@@ -157,4 +414,43 @@ void solveTOH( disc* d,float height,int *peg,int n,int src,int dest,int aux)
 void threadToh(pThread& x)
 {
     solveTOH( x.d,x.height,x.peg,x.n,x.src,x.dest,x.aux);
+    x.finish[0]=1;
+}
+void initialDisplayThread(dThread& a)
+{
+    for(int i=a.num-1;i>=0;i--)
+    {
+        a.d[i].Create(sf::Vector2f(WIDTH*1.0f/4.0f,-200*(a.num-i)-(a.num-1-i)*disc::scale*20.0f),sf::Vector2f(40.0f+20*i,20.0f),i+1);
+    }
+    int j=a.num;
+    sf::Clock clock;
+    while(1)
+    {
+        float dt=clock.getElapsedTime().asMicroseconds();
+        clock.restart();
+        for(int i=0;i<j;i++)
+        {
+            a.d[i].move(sf::Vector2f(0,dt*disc::speed/500));
+        }
+
+        if(a.d[j-1].position.y>HEIGHT-TOH::offset-(a.num-j)*a.d[0].size.y)
+        {
+            a.d[j-1].position.y=HEIGHT-TOH::offset-(a.num-j)*a.d[0].size.y;
+            a.d[j-1].setPos();
+            j--;
+        }
+        if(j==0) break;
+    }
+    a.finish[0]=1;
+}
+
+bool mouseIntersect(sf::Sprite& sp,sf::RenderWindow& window,sf::Vector2u size)
+{
+    sf::Vector2i b= sf::Mouse::getPosition(window);
+    sf::Vector2f a=sp.getPosition();
+    if(b.x<a.x) return false;
+    if(b.y<a.y) return false;
+    if(b.y>a.y+size.y) return false;
+    if(b.x>a.x+size.x) return false;
+    return true;
 }

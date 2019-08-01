@@ -4,7 +4,7 @@
         "javascript": "node",
         "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
         "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
-        "cpp": "cd $dir && g++ *.cpp -o $fileNameWithoutExt.exe -ID:\\Project\\SFML\\SFML-2.5.1\\include -LD:\\Project\\SFML\\SFML-2.5.1\\lib -lsfml-graphics -lsfml-window -lsfml-system && $dir$fileNameWithoutExt",
+        "cpp": "cd $dir && g++ *.cpp -o $fileNameWithoutExt.exe -ID:\\Project\\SFML\\SFML-2.5.1\\include  -LD:\\Project\\SFML\\SFML-2.5.1\\lib -lsfml-graphics -lsfml-window -lsfml-system && $dir$fileNameWithoutExt",
         "objective-c": "cd $dir && gcc -framework Cocoa $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
         "php": "php",
         "python": "python -u",

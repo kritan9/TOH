@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "D:\\Project\\SFML\\SFML-2.5.1\\include"
+                
             ],
             "defines": [
                 "_DEBUG",
