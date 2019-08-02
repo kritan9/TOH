@@ -470,7 +470,8 @@ void initialDisplayThread(dThread& a)
 
 bool mouseIntersect(sf::Sprite& sp,sf::RenderWindow& window,sf::Vector2u size)
 {
-    sf::Vector2i b= sf::Mouse::getPosition(window);
+   
+   sf::Vector2i b = sf::Vector2i(int(sf::Mouse::getPosition(window).x*float(WIDTH)/window.getSize().x), int(sf::Mouse::getPosition(window).y*float(HEIGHT) / window.getSize().y));
     sf::Vector2f a=sp.getPosition();
     if(b.x<a.x) return false;
     if(b.y<a.y) return false;
