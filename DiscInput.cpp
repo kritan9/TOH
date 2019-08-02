@@ -42,7 +42,7 @@ int DiscInput::Update(sf::RenderWindow& window)
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace))
 		{
-			name.pop_back();flag=1;
+			if(name.size()!=0) name.pop_back();flag=1;
 		}
 		else
 		name += static_cast<char>(TOH::event.text.unicode);

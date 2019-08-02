@@ -29,7 +29,7 @@ class disc
     void setPos()
     {
       rect.setPosition(position);
-      //num.setPosition(position);
+      num.setPosition(position);
     }
     ~disc(){};
 

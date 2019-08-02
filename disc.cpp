@@ -10,9 +10,8 @@ void disc::Create( sf::Vector2f pos,sf::Vector2f siz,int i)
     num.setFont(font);
     std::string a;
     position=pos; size=scale * siz; 
-    num.setCharacterSize(20);
-   num.setScale(sf::Vector2f(disc::scale,disc::scale));
-    num.setOrigin(sf::Vector2f(5.0f*scale,10.0f*scale));
+    num.setCharacterSize(15*scale);
+    num.setOrigin(sf::Vector2f(7.0f*scale,10.0f*scale));
     num.setPosition(pos);
     rect.setSize(size);
     rect.setOrigin(sf::Vector2f(size.x*0.5,size.y*0.5));
@@ -20,6 +19,7 @@ void disc::Create( sf::Vector2f pos,sf::Vector2f siz,int i)
     rect.setFillColor(sf::Color::Blue);
     rect.setOutlineThickness(2*scale);
     rect.setOutlineColor(sf::Color(255,255,255));
+    ss.clear();
     ss<<i;
     ss>>a;
     num.setString(a);
@@ -27,14 +27,14 @@ void disc::Create( sf::Vector2f pos,sf::Vector2f siz,int i)
 void disc::draw(sf::RenderWindow& window)
 {
     window.draw(rect);
-    //window.draw(num);
+    window.draw(num);
 }
 
 void disc::move(sf::Vector2f pos)
 {
     position+= pos;
     rect.setPosition(position);
-   // num.setPosition(position);
+    num.setPosition(position);
     
 }
 

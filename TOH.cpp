@@ -85,17 +85,21 @@ int main()
                 {
                 if( sf::Mouse::isButtonPressed(sf::Mouse::Left) )
                 {
-                    if(disc::speed<numOfDisk*10.0f/3.0f )
-                    {disc::speed+=0.005f;
-                    toh.speedAdjust(disc::speed);}
-                }
+                    if(disc::speed < /* numOfDisk*10.0f/3.0f*/250.0f )
+                    {
+                        if(disc::speed>10) disc::speed+=0.005f*disc::speed/10;
+                        else disc::speed+=0.005f;
+                        toh.speedAdjust(disc::speed);}
+                    }
                 }
                 if(mouseIntersect(toh.left,window,toh._left.getSize()))
                 {
                 if( sf::Mouse::isButtonPressed(sf::Mouse::Left) )
                 {
                     if(disc::speed>0.505f)
-                    {disc::speed-=0.005f;
+                    {
+                        if(disc::speed>10) disc::speed-=0.005f*disc::speed/10;
+                        else disc::speed-=0.005f;
                     toh.speedAdjust(disc::speed);}
                 }
                 }
@@ -118,6 +122,7 @@ int main()
                 {
                   disk[i].draw(window);
                 }
+                
                 window.draw(toh.left);
                 window.draw(toh.right);
                 window.draw(toh.but1);
