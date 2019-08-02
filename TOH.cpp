@@ -4,6 +4,7 @@
 #include "DiscInput.h"
 using namespace std;
 
+int TOH::pause = 0;
 int threadTerminate=0;
 float TOH::offset=150.0f;
 bool mouseIntersect(sf::Sprite& sp,sf::RenderWindow& window,sf::Vector2u size);
@@ -79,6 +80,11 @@ int main()
                     {
                         TOH::state=TOH::ProgramState::Close;
                     }
+                    if (TOH::event.type == sf::Event::TextEntered )
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+                    {
+                        TOH::pause=(TOH::pause+1)%2; 
+                    }
                 }
 
                 if(mouseIntersect(toh.right,window,toh._right.getSize()))
@@ -87,7 +93,7 @@ int main()
                 {
                     if(disc::speed < /* numOfDisk*10.0f/3.0f*/250.0f )
                     {
-                        if(disc::speed>10) disc::speed+=0.005f*disc::speed/10;
+                        if(disc::speed>10) disc::speed+=0.005f*disc::speed/2;
                         else disc::speed+=0.005f;
                         toh.speedAdjust(disc::speed);}
                     }
@@ -98,7 +104,7 @@ int main()
                 {
                     if(disc::speed>0.505f)
                     {
-                        if(disc::speed>10) disc::speed-=0.005f*disc::speed/10;
+                        if(disc::speed>10) disc::speed-=0.005f*disc::speed/2;
                         else disc::speed-=0.005f;
                     toh.speedAdjust(disc::speed);}
                 }
@@ -113,6 +119,18 @@ int main()
                     threadTerminate=1;
                 }
                 }}else{mouseFlag[2]=0;toh.but1.setTexture(toh._button);}
+                
+                if(mouseIntersect(toh.paused,window,sf::Vector2u(40,40))){
+                if( sf::Mouse::isButtonPressed(sf::Mouse::Left) || mouseFlag[3]==1)
+                {
+                    mouseFlag[3]=1;
+                 if(TOH::event.type==sf::Event::MouseButtonReleased)
+                {
+                    mouseFlag[3]=0;
+                    TOH::pause=(TOH::pause+1)%2;
+                }
+                }}else{mouseFlag[3]=0;}
+
                 window.clear(sf::Color::Black);
                 window.draw(toh.bg);
                 window.draw(toh.speed);
@@ -239,6 +257,7 @@ int main()
             {
                  if(init == 0)
             {
+                 TOH::pause=0;
                 TOH::steps=0;
                 toh.but1.setTexture(toh._button);
                 toh.but2.setTexture(toh._button);
@@ -335,7 +354,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
         {   
             dt=fullclock.getElapsedTime().asMilliseconds()-t;
             t=fullclock.getElapsedTime().asMilliseconds();
-            d[discNum].move(sf::Vector2f(0,-disc::speed*dt));
+           if( TOH::pause==0) d[discNum].move(sf::Vector2f(0,-disc::speed*dt));
             if(d[discNum].position.y<height) 
             {
                 d[discNum].position.y=height;
@@ -359,7 +378,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
             if(x>dist*0.5f && flag3==0){ flag3=1; speedY*=-1;}
            if(flag3==0) {x+=speedX>0 ? speedX*dt : -speedX*dt;}
            else{ x-=speedX>0 ? speedX*dt : -speedX*dt;}
-            d[discNum].move(sf::Vector2f(speedX*dt,speedY*dt/sqrt(0.1f+fabs(x))));
+          if( TOH::pause==0)  d[discNum].move(sf::Vector2f(speedX*dt,speedY*dt/sqrt(0.1f+fabs(x))));
              if(speedX>0)
              {  if(d[discNum].position.x>(WIDTH/4.0f)*destPeg)
                  {
@@ -389,7 +408,7 @@ void DiscUpdate(disc* d,int discNum,int srcPeg,int destPeg,float height,int *peg
         {
             dt=fullclock.getElapsedTime().asMilliseconds()-t;
             t=fullclock.getElapsedTime().asMilliseconds();
-            d[discNum].move(sf::Vector2f(0,disc::speed*dt));
+           if( TOH::pause==0) d[discNum].move(sf::Vector2f(0,disc::speed*dt));
             if(d[discNum].position.y>HEIGHT-TOH::offset-peg[destPeg-1]*d[discNum].size.y) 
             {
                 d[discNum].position.y=HEIGHT-TOH::offset-peg[destPeg-1]*d[discNum].size.y;

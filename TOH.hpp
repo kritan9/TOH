@@ -10,6 +10,7 @@
 
 struct TOH
 {
+    static int pause;
     enum ProgramState {Menu,DiscInp,ScaleInput,Solve,Finish,Close};
     static ProgramState state;
     static sf::Font font ;
@@ -38,8 +39,20 @@ struct TOH
     sf::Text mainMenu;
     sf::Text solve;
     sf::Text inputDisk;
+    sf::Texture _playing;
+    sf::Texture _paused;
+    sf::Sprite playing;
+    sf::Sprite paused;
    TOH()
    {
+       _playing.loadFromFile("Images/playing.png");
+       _paused.loadFromFile("Images/paused.png");
+        paused.setTexture(_paused);
+        playing.setTexture(_playing);
+        paused.setScale(sf::Vector2f(40.0f/_paused.getSize().x,40.0f/_paused.getSize().y));
+        playing.setScale(sf::Vector2f(40.0f/_playing.getSize().x,40.0f/_playing.getSize().y));
+        paused.setPosition(sf::Vector2f(WIDTH-50.0f,10.0f));
+        playing.setPosition(sf::Vector2f(WIDTH-50.0f,10.0f));
        _pole.loadFromFile("Images/pole.png");
        for(int i=0;i<3;i++)
        { 
@@ -58,12 +71,12 @@ struct TOH
        left.setTexture(_left);
        right.setTexture(_right);
        left.setPosition(sf::Vector2f(500.0f,20.0f));
-       right.setPosition(sf::Vector2f(700.0f,20.0f));
+       right.setPosition(sf::Vector2f(750.0f,20.0f));
        but1.setTexture(_button); but2.setTexture(_button);
        but1.setPosition(sf::Vector2f(200.0f,680.0f));but2.setPosition(sf::Vector2f(900.0f,680.0f));
        bg.setScale(sf::Vector2f(float(WIDTH)/_bg.getSize().x,float(HEIGHT)/_bg.getSize().y));
        speed.setFont(font);
-       speed.setPosition(580.0f,20.0f);
+       speed.setPosition(600.0f,20.0f);
        speed.setCharacterSize(50.0f);
        Steps.setFont(font);
        Steps.setCharacterSize(50.0f);
@@ -71,7 +84,7 @@ struct TOH
        Steps.setOutlineThickness(10.0f);
        s.setFont(font);
        s.setString(std::string("Speed:"));
-       s.setPosition(sf::Vector2f(570.0f,0.0f));
+       s.setPosition(sf::Vector2f(600.0f,0.0f));
        mainMenu.setFont(font); inputDisk.setFont(font); solve.setFont(font);
        mainMenu.setOutlineThickness(1.0f); inputDisk.setOutlineThickness(1.0f); solve.setOutlineThickness(1.0f);
        mainMenu.setString("Main Menu"); inputDisk.setString("Number Of Discs"); solve.setString("Solve");
@@ -97,6 +110,11 @@ struct TOH
         a="Step : "+a;
         Steps.setString(a);
         win.draw(Steps);
+        if(pause==0)
+        {
+            win.draw(playing);
+        }
+        else win.draw(paused);
    }
    void drawPole(sf::RenderWindow& win)
    {
